@@ -1,4 +1,21 @@
+# === JetBrains IDEs ===
 .idea/
-cmake-build-debug/
-.git/
-*.swp
+*.iml
+
+# === Build artifacts ===
+cmake-build-*/
+build/
+out/
+
+# === CMake ===
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# === OS-specific ===
+# macOS
+.DS_Store
+# Windows
+Thumbs.db
