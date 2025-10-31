@@ -4,7 +4,7 @@
 
 void drawField(int height, int width, int x, int y, std::vector<std::pair<int, int>> dots) {
     system("clear");
-    printf("x = %i, y = %i\npress [f] to dot\n\n", x,y);
+    printf("x = %i, y = %i\npress [f] to dot\npress [c] to clear\n\n", x,y);
     for (int i=0;i<height;i++) {
         if ( i == 0 || i == height-1 ) {
             for (int j=0;j<width;j++) {
@@ -24,7 +24,7 @@ void drawField(int height, int width, int x, int y, std::vector<std::pair<int, i
                             is_dot=1;
                         }
                     }
-                    if (!is_dot) printf(". ");
+                    if (!is_dot) printf("  ");
                 }
             }
         }
@@ -65,12 +65,19 @@ int main() {
             case 97:
             case 132:
                 if (x-1>0) x--; break;
+            case 99:
+
+                dots.clear(); break;
             case 102:
+            case 176:
                 int flag=1;
                 for (int q=0; q<dots.size(); q++) {
                     if (dots[q]==std::make_pair(x,y)) flag=0;
                 }
-                if (flag) dots.push_back(std::make_pair(x,y));
+                if (flag) {
+                    dots.push_back(std::make_pair(x,y));
+                }
+                break;
 
 
         }
