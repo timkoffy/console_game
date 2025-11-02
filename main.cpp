@@ -4,57 +4,47 @@
 #include <thread>
 #include <vector>
 #include <fcntl.h>
-
+#include <iostream>
 
 class Game {
-private:
-    int height,width;
-    int x=1;
-    int y=1;
-    int direction;
-    std::vector<std::pair<int, int>> tail;
     const int SPEED = 150;
     const int TAIL_LENGHT=10;
+    int height,width;
+    int x_player=1;
+    int y_player=1;
+    int direction;
+    std::vector<std::pair<int, int>> tail;
 
 public:
     void setup(int h, int w) {
-        system("stty -icanon");
-        system("stty -echo");
-        printf("\e[?25l");
-        int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-        fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-
         height=h; width=w;
-        draw_field(height,width,x,y,tail);
-        tail.emplace_back(x,y);
+        draw_field();
+        tail.emplace_back(x_player,y_player);
     }
 
-    void draw_field(int height, int width, int x, int y, std::vector<std::pair<int, int>> dots) {
+    void draw_field() {
         system("clear");
-        for (int i=0;i<height;i++) {
-            if ( i == 0 || i == height-1 ) {
-                for (int j=0;j<width;j++) {
-                    printf("* ");
-                }
-            } else {
-                for (int j=0;j<width;j++) {
-                    if ( i==y && j==x ) {
-                        printf("& ");
-                    } else if ( j == 0 || j == width-1 ) {
-                        printf("* ");
-                    } else {
-                        int is_dot=0;
-                        for (int q=0; q<dots.size(); q++) {
-                            if (i==dots[q].second && j==dots[q].first) {
-                                printf("0 ");
-                                is_dot=1;
-                            }
-                        }
-                        if (!is_dot) printf("  ");
-                    }
-                }
+        for (int y = 0; y < height; y++) {
+            if ( y == 0 || y == height-1 ) {
+                for (int x = 0; x < width; x++) {
+                    std::cout << "# ";
+                } std::cout << "\n"; continue;
             }
-            printf("\n");
+            for (int x = 0; x < width; x++) {
+                if ( y == y_player && x == x_player ) {
+                    std::cout << "& "; continue;
+                } if ( x == 0 || x == width-1 ) {
+                    std::cout << "# "; continue;
+                }
+                bool exists = false;
+                for (int tail_index = 0; tail_index < tail.size(); tail_index++) {
+                    if (x == tail[tail_index].first &&
+                        y == tail[tail_index].second) {
+                        std::cout << "* ";
+                        exists = true;
+                    }
+                } if (!exists) std::cout << "  ";
+            } std::cout << "\n";
         }
     }
 
@@ -68,42 +58,38 @@ public:
                 if (direction!=1) direction=3; break;
             case 97: case 132:
                 if (direction!=2) direction=4; break;
-            // case 102: case 176:
-            //     int is_dot_exist=0;
-            //     for (int i=0; i<dots.size(); i++) {
-            //         if (dots[i]==std::make_pair(x,y)) is_dot_exist=1;
-            //     }
-            //     if (!is_dot_exist) {
-            //         dots.emplace_back(x,y);
-            //     } break;
         }
     }
 
     void move() {
         switch (direction) {
-            case 1: y--; break;
-            case 2: x++; break;
-            case 3: y++; break;
-            case 4: x--; break;
+            case 1: y_player--; break;
+            case 2: x_player++; break;
+            case 3: y_player++; break;
+            case 4: x_player--; break;
         }
-        if (x==0) x=width-1;
-        if (y==0) y=height-1;
-        if (x==width+1) x=1;
-        if (y==height+1) y=1;
+        if (x_player == 0)
+            x_player = width-2;
+        if (y_player == 0)
+            y_player = height-2;
+        if (x_player == width-1)
+            x_player = 1;
+        if (y_player == height-1)
+            y_player = 1;
     }
 
     void tail_spawn() {
         int exists=0;
         for (int i=0; i<tail.size(); i++) {
-            if (tail[i]==std::make_pair(x,y)) exists=1;
+            if (tail[i]==std::make_pair(x_player,y_player)) exists=1;
         }
         if (!exists) {
-            tail.emplace_back(x,y);
+            tail.emplace_back(x_player,y_player);
         }
     }
 
     void tail_update() {
-        tail.emplace_back(x,y);
+        tail.emplace_back(x_player,y_player);
         tail.erase(tail.begin());
     }
 
@@ -111,7 +97,7 @@ public:
 
     }
 
-    void playtime() {
+    void run() {
         while (1) {
             int ch = getchar();
             if (ch != EOF) {
@@ -123,7 +109,7 @@ public:
 
             move();
 
-            draw_field(height,width,x,y,tail);
+            draw_field();
             std::this_thread::sleep_for(std::chrono::milliseconds(SPEED));
         }
     }
@@ -138,13 +124,19 @@ int main(int argc, char* argv[]) {
     int h=std::atoi(argv[1]);
     int w=std::atoi(argv[2]);
 
-    if (h<3 || w<3) {
-        printf("height and width must be more than 3");
+    if (h<5 || w<5) {
+        printf("height and width must be more than 5");
         return 1;
     }
 
+    system("stty -icanon");
+    system("stty -echo");
+    printf("\e[?25l");
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
     Game game;
     game.setup(h,w);
-    game.playtime();
+    game.run();
     return 0;
 }
