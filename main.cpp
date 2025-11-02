@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <thread>
 #include <vector>
+#include <fcntl.h>
 
 
 class Game {
@@ -12,7 +13,7 @@ private:
     int y=1;
     int direction;
     std::vector<std::pair<int, int>> dots;
-    const int SPEED = 150;
+    const int SPEED = 30;
 
 public:
     void setup_game() {
@@ -25,12 +26,15 @@ public:
         system("stty -echo");
         printf("\e[?25l");
 
+        int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+        fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
         draw_field(height,width,x,y,dots);
     }
 
     void draw_field(int height, int width, int x, int y, std::vector<std::pair<int, int>> dots) {
         system("clear");
-        printf("x = %i, y = %i\nWASD - ходить, F - поставить точку, C - очистить поле\n\n", x,y);
+        printf("x = %i, y = %i\nWASD - поворот, F - поставить точку, C - очистить поле\n\n", x,y);
         for (int i=0;i<height;i++) {
             if ( i == 0 || i == height-1 ) {
                 for (int j=0;j<width;j++) {
@@ -58,14 +62,6 @@ public:
         }
     }
 
-    int kbhit_nonblocking() {
-        struct timeval tv = {0L, 0L};
-        fd_set fds;
-        FD_ZERO(&fds);
-        FD_SET(0, &fds);
-        return select(1, &fds, NULL, NULL, &tv);
-    }
-
     void key_input(int key) {
         switch (key) {
             case 119: case 134:
@@ -91,23 +87,19 @@ public:
 
     void move() {
         switch (direction) {
-            case 1:
-                if (y-1>0) y--; break;
-            case 2:
-                if (x+2<width) x++; break;
-            case 3:
-                if (y+2<height) y++; break;
-            case 4:
-                if (x-1>0) x--; break;
+            case 1: if (y-1>0) y--; break;
+            case 2: if (x+2<width) x++; break;
+            case 3: if (y+2<height) y++; break;
+            case 4: if (x-1>0) x--; break;
         }
     }
 
+
     void playtime() {
+        setup_game();
         while (1) {
-            if (kbhit_nonblocking()) {
-                direction = getchar();
-                key_input(direction);
-            }
+            int ch = getchar();
+            if (ch != EOF) key_input(ch);
             move();
             draw_field(height,width,x,y,dots);
             std::this_thread::sleep_for(std::chrono::milliseconds(SPEED));
@@ -117,7 +109,6 @@ public:
 
 int main() {
     Game game;
-
-    game.setup_game();
     game.playtime();
+    return 0;
 }
