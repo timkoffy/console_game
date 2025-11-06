@@ -14,6 +14,8 @@ class Game {
     int y_player=1;
     int direction;
     std::vector<std::pair<int, int>> tail;
+    bool GAME_STARTS = false;
+    bool GAME_OVER = false;
 
 public:
     void setup(int h, int w) {
@@ -42,6 +44,9 @@ public:
                         y == tail[tail_index].second) {
                         std::cout << "* ";
                         exists = true;
+                    } if (GAME_STARTS && x_player == tail[tail_index].first &&
+                        y_player == tail[tail_index].second) {
+                        GAME_OVER = true;
                     }
                 } if (!exists) std::cout << "  ";
             } std::cout << "\n";
@@ -91,20 +96,19 @@ public:
     void tail_update() {
         tail.emplace_back(x_player,y_player);
         tail.erase(tail.begin());
-    }
-
-    void tail_collapsed() {
-
+        GAME_STARTS = true;
     }
 
     void run() {
-        while (1) {
+        while (!GAME_OVER) {
             int ch = getchar();
             if (ch != EOF) {
                 key_input(ch);
             }
 
-            if (tail.size()<TAIL_LENGHT) tail_spawn();
+            if (tail.size()<TAIL_LENGHT) {
+                tail_spawn();
+            }
             else tail_update();
 
             move();
