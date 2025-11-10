@@ -3,7 +3,9 @@ project(console_game)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(console_game main.cpp)
+add_executable(console_game main.cpp
+        Game.cpp
+        Game.h)
 
 
 find_package(Curses REQUIRED)
