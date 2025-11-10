@@ -7,13 +7,16 @@
 #include <iostream>
 
 class Game {
-    int SPEED = 200;
-    int TAIL_LENGHT = 5;
+    int SPEED = 100;
+    int TAIL_LENGHT = 10;
 
     int height,width;
 
     int x_player=1;
     int y_player=1;
+
+    int x_fruit;
+    int y_fruit;
 
     std::vector<std::pair<int, int>> tail;
     std::vector<std::pair<int, int>> fruits;
@@ -21,8 +24,16 @@ class Game {
     bool GAME_STARTS = false;
     bool GAME_OVER = false;
 
-    const int TIME_TO_FRUIT = 20;
-    int time_to_fruit = TIME_TO_FRUIT;
+    enum keys {
+        W_KEY_ENG = 119,
+        W_KEY_RUS = 134,
+        D_KEY_ENG = 100,
+        D_KEY_RUS = 178,
+        S_KEY_ENG = 115,
+        S_KEY_RUS = 139,
+        A_KEY_ENG = 97,
+        A_KEY_RUS = 132
+    };
 
     enum directions {
         UP = 0,
@@ -35,15 +46,15 @@ class Game {
 public:
     void setup(int h, int w) {
         height=h; width=w;
+        fruit_spawn();
         draw_field();
-        tail.emplace_back(x_player,y_player);
     }
 
     void draw_field() {
         system("clear");
 
         std::cout << "score: " << TAIL_LENGHT << std::endl;
-        std::cout << "time to fruit: " << time_to_fruit << "\n" << std::endl;
+        std::cout << x_fruit << " " << y_fruit << "\n" << std::endl;
 
         for (int y = 0; y < height; y++) {
             if ( y == 0 || y == height-1 ) {
@@ -52,10 +63,12 @@ public:
                 } std::cout << "\n"; continue;
             }
             for (int x = 0; x < width; x++) {
-                if ( y == y_player && x == x_player ) {
+                if ( x == x_player && y == y_player) {
                     std::cout << "& "; continue;
-                } if ( x == 0 || x == width-1 ) {
+                } if ( x == 0 || x == width-1) {
                     std::cout << "# "; continue;
+                } if ( x == x_fruit && y == y_fruit ) {
+                    std::cout << "% "; continue;
                 }
                 bool exists = false;
                 for (int tail_index = 0; tail_index < tail.size(); tail_index++) {
@@ -68,29 +81,20 @@ public:
                         GAME_OVER = true;
                     }
                 }
-                for (int fruit_index = 0; fruit_index < fruits.size(); fruit_index++) {
-                    if (x == fruits[fruit_index].first &&
-                        y == fruits[fruit_index].second) {
-                        std::cout << "% ";
-                        exists = true;
-                    } if (x_player == fruits[fruit_index].first &&
-                        y_player == fruits[fruit_index].second ) {
-                        fruit_collected(fruits[fruit_index]);
-                    }
-                } if (!exists) std::cout << "  ";
+                if (!exists) std::cout << "  ";
             } std::cout << "\n";
         }
     }
 
     void key_input(int key) {
         switch (key) {
-            case 119: case 134:
+            case W_KEY_ENG: case W_KEY_RUS:
                 if (direction != DOWN) direction = UP; break;
-            case 100: case 178:
+            case D_KEY_ENG: case D_KEY_RUS:
                 if (direction != LEFT) direction = RIGHT; break;
-            case 115: case 139:
+            case S_KEY_ENG: case S_KEY_RUS:
                 if (direction != UP) direction = DOWN; break;
-            case 97: case 132:
+            case A_KEY_ENG: case A_KEY_RUS:
                 if (direction != RIGHT) direction = LEFT; break;
         }
     }
@@ -124,27 +128,14 @@ public:
 
     void fruit_spawn() {
         srand(static_cast<unsigned int>(time(nullptr)));
-        int x_fruit = rand() % width;
-        int y_fruit = rand() / width % height;
-
-        bool exists = false;
-        for (int fruit_index = 0; fruit_index < fruits.size(); fruit_index++) {
-            if (x_fruit == fruits[fruit_index].first &&
-                y_fruit == fruits[fruit_index].second ) {
-                exists = true;
-            }
-        }
-        if (!exists) fruits.emplace_back(x_fruit, y_fruit);
+        x_fruit = rand() % (width-2) + 1;
+        y_fruit = rand() / width % (height-2) + 1;
     }
 
-    void fruit_collected(auto fruit) {
-        for (int i = 0; i < fruits.size(); i++) {
-            if (fruits[i] == fruit) {
-                fruits.erase(fruits.begin()+i);
-                TAIL_LENGHT++;
-                break;
-            }
-        }
+    void fruit_collected() {
+        TAIL_LENGHT++;
+        system("echo -e '\a'");
+        fruit_spawn();
     }
 
     void run() {
@@ -157,13 +148,10 @@ public:
 
             move();
 
+            if ( x_player == x_fruit && y_player == y_fruit ) fruit_collected();
+
             draw_field();
 
-            time_to_fruit--;
-            if (time_to_fruit == 0) {
-                fruit_spawn();
-                time_to_fruit = TIME_TO_FRUIT;
-            }
             std::this_thread::sleep_for(std::chrono::milliseconds(SPEED));
         }
     }
